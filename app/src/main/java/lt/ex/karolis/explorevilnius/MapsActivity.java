@@ -21,6 +21,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -129,12 +130,13 @@ public class MapsActivity extends FragmentActivity implements
 
         MarkerOptions options = new MarkerOptions()
                 .position(currentLatLng)
-                .title("I am here!");
+                .title("I am here!")
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.your_flashing_arrow_anim_drawable)); // and give your animation drawable as icon
 
         mMap.addMarker(options);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLng));
 
-        Log.d(TAG, location.toString());
+        Log.d(TAG, "New location: " + location.toString());
     }
 
     @Override
