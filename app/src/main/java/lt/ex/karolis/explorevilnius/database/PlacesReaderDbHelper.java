@@ -25,12 +25,13 @@ public class PlacesReaderDbHelper extends SQLiteOpenHelper {
 
     private static final String SQL_CREATE_ENTRIES =
             "CREATE TABLE IF NOT EXISTS " + TABLE_NAME + "(" +
-                    COLUMN_NAME_ID + " VARCHAR PRIMARY KEY," +
-                    COLUMN_NAME_NAME + " VARCHAR," +
-                    COLUMN_NAME_TYPE + " VARCHAR," +
-                    COLUMN_NAME_ICON + " VARCHAR," +
-                    COLUMN_NAME_PHOTO_REFERENCE + " VARCHAR," +
-                    COLUMN_NAME_LATITUDE + " REAL," +
+                    COLUMN_NAME_ID + " VARCHAR PRIMARY KEY, " +
+                    COLUMN_NAME_NAME + " VARCHAR, " +
+                    COLUMN_NAME_TYPE + " VARCHAR, " +
+                    COLUMN_NAME_ICON + " VARCHAR, " +
+                    COLUMN_NAME_PHOTO_REFERENCE + " VARCHAR, " +
+                    COLUMN_NAME_PLACE_DETAIL + " VARCHAR, "+
+                    COLUMN_NAME_LATITUDE + " REAL, " +
                     COLUMN_NAME_LONGITUDE + " REAL)";
 
     private static final String SQL_DELETE_ENTRIES =
@@ -66,6 +67,7 @@ public class PlacesReaderDbHelper extends SQLiteOpenHelper {
         values.put(COLUMN_NAME_ICON, place.getIcon());
         values.put(COLUMN_NAME_TYPE, place.getType());
         values.put(COLUMN_NAME_PHOTO_REFERENCE, place.getPhotoReference());
+        values.put(COLUMN_NAME_PLACE_DETAIL, place.getPlaceDetail());
         values.put(COLUMN_NAME_LATITUDE, place.getLocation().getLatitude());
         values.put(COLUMN_NAME_LONGITUDE, place.getLocation().getLongitude());
 
@@ -85,6 +87,7 @@ public class PlacesReaderDbHelper extends SQLiteOpenHelper {
                 COLUMN_NAME_TYPE,
                 COLUMN_NAME_ICON,
                 COLUMN_NAME_PHOTO_REFERENCE,
+                COLUMN_NAME_PLACE_DETAIL,
                 COLUMN_NAME_LATITUDE,
                 COLUMN_NAME_LONGITUDE,
         };
@@ -111,7 +114,8 @@ public class PlacesReaderDbHelper extends SQLiteOpenHelper {
                     cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_NAME)),
                     cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_TYPE)),
                     true,
-                    cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_PHOTO_REFERENCE))
+                    cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_PHOTO_REFERENCE)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME_PLACE_DETAIL))
             );
             places.add(place);
         }

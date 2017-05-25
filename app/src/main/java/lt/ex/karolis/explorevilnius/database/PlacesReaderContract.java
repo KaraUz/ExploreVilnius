@@ -20,6 +20,7 @@ public class PlacesReaderContract {
         public static final String COLUMN_NAME_TYPE = "type";
         public static final String COLUMN_NAME_ICON = "icon";
         public static final String COLUMN_NAME_PHOTO_REFERENCE = "photoReference";
+        public static final String COLUMN_NAME_PLACE_DETAIL = "placeDetail";
         public static final String COLUMN_NAME_LATITUDE = "latitude";
         public static final String COLUMN_NAME_LONGITUDE = "longitude";
     }

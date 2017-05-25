@@ -12,6 +12,7 @@ import java.net.URL;
 import java.util.List;
 
 import lt.ex.karolis.explorevilnius.dataobjects.Place;
+import lt.ex.karolis.explorevilnius.utils.JsonReaders.PlaceDetailJsonReader;
 import lt.ex.karolis.explorevilnius.utils.JsonReaders.PlaceJsonReader;
 
 /**
@@ -22,42 +23,52 @@ public class HttpRequestUtils {
 
     public static List<Place> requestPlaceUrl(URL url) throws IOException{
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+        urlConnection.connect();
+        InputStream in = new BufferedInputStream(urlConnection.getInputStream());
         try {
-            InputStream in = new BufferedInputStream(urlConnection.getInputStream());
             return new PlaceJsonReader().convert(in);
         } finally {
+            in.close();
+            urlConnection.disconnect();
+        }
+    }
+
+    public static List<String> requestPlaceDetailsUrl(URL url) throws IOException{
+        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+        urlConnection.connect();
+        InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+        try {
+            return new PlaceDetailJsonReader().convert(in);
+        } finally {
+            in.close();
             urlConnection.disconnect();
         }
     }
 
     public static Bitmap requestIconUrl(URL url) throws IOException{
-        HttpURLConnection connection = connection = (HttpURLConnection) url.openConnection();
+        HttpURLConnection connection  = (HttpURLConnection) url.openConnection();
+        connection.connect();
+        InputStream in = connection.getInputStream();
         try {
-            connection.setDoInput(true);
-            connection.connect();
-            InputStream input = connection.getInputStream();
-            Bitmap myBitmap = BitmapFactory.decodeStream(input);
+            Bitmap myBitmap = BitmapFactory.decodeStream(in);
             return myBitmap;
-        } catch (IOException e) {
-            // Log exception
-            return null;
-        } finally {
+        }finally {
             connection.disconnect();
+            in.close();
         }
     }
 
     public static Bitmap requestPlaceImageUrl(URL url) throws IOException{
-        HttpURLConnection connection = connection = (HttpURLConnection) url.openConnection();
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.connect();
+        InputStream in = connection.getInputStream();
+        BufferedInputStream bin = new BufferedInputStream(in);
         try {
-            connection.connect();
-            InputStream is = connection.getInputStream();
-            BufferedInputStream bis = new BufferedInputStream(is);
-            return BitmapFactory.decodeStream(bis);
-        } catch (IOException e) {
-            // Log exception
-            return null;
+            return BitmapFactory.decodeStream(bin);
         } finally {
             connection.disconnect();
+            in.close();
+            bin.close();
         }
     }
 }

@@ -51,6 +51,7 @@ import lt.ex.karolis.explorevilnius.dataobjects.Place;
 import lt.ex.karolis.explorevilnius.utils.BitmapUtils;
 import lt.ex.karolis.explorevilnius.utils.HttpRequestUtils;
 import lt.ex.karolis.explorevilnius.utils.UrlStringBuilder.ImageHttpUrlBuilder;
+import lt.ex.karolis.explorevilnius.utils.UrlStringBuilder.PlaceDetailHttpUrlBuilder;
 import lt.ex.karolis.explorevilnius.utils.UrlStringBuilder.PlaceHttpUrlBuilder;
 
 public class MapsActivity extends FragmentActivity implements
@@ -370,16 +371,23 @@ public class MapsActivity extends FragmentActivity implements
         protected List<Place> doInBackground(URL... params) {
             startTime = System.currentTimeMillis();
             List<Place> places = new ArrayList<>();
-            for (URL param : params) {
-                try {
-                    places = HttpRequestUtils.requestPlaceUrl(param);
-                    for (Place place : places) {
-                        place.setBitmap(questionBitmap);
+            try {
+                places = HttpRequestUtils.requestPlaceUrl(params[0]);
+                for (Place place : places) {
+                    place.setBitmap(questionBitmap);
+                    String placeDetailUrlString = new PlaceDetailHttpUrlBuilder("https://maps.googleapis.com/maps/api/place/details/json")
+                            .addPlaceId(place.getId())
+                            .addKey(getResources().getString(R.string.google_maps_key))
+                            .buildUrlString();
+                    List<String> strings = HttpRequestUtils.requestPlaceDetailsUrl(new URL(placeDetailUrlString));
+                    if(strings != null && !strings.isEmpty()){
+                        place.setPlaceDetail(strings.get(0));
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+
 
             return places;
         }
@@ -447,7 +455,7 @@ public class MapsActivity extends FragmentActivity implements
                                 .addMaxWidth(540)
                                 .addMaxHeight(297)
                                 .addPhotoReference(place.getPhotoReference())
-                                .addKey("AIzaSyD0BAqS6zWQQt_M6AylhamNZ31CkbbwsTQ")
+                                .addKey(getResources().getString(R.string.google_maps_key))
                                 .buildUrlString()
                 ));
             } catch (IOException e) {

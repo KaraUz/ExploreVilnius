@@ -19,12 +19,13 @@ public class Place {
     private String type;
     private boolean visited = false;
     private String photoReference;
+    private String placeDetail;
 
 
     public Place() {
     }
 
-    public Place(String id, Location location, String icon, String name, String type, boolean visited, String photoReference) {
+    public Place(String id, Location location, String icon, String name, String type, boolean visited, String photoReference, String placeDetail) {
         this.id = id;
         this.location = location;
         this.icon = icon;
@@ -32,6 +33,7 @@ public class Place {
         this.type = type;
         this.visited = visited;
         this.photoReference = photoReference;
+        this.placeDetail = placeDetail;
     }
 
     public String getName() {
@@ -96,6 +98,14 @@ public class Place {
 
     public void setPhotoReference(String photoReference) {
         this.photoReference = photoReference;
+    }
+
+    public String getPlaceDetail() {
+        return placeDetail;
+    }
+
+    public void setPlaceDetail(String placeDetail) {
+        this.placeDetail = placeDetail;
     }
 
     @Override
