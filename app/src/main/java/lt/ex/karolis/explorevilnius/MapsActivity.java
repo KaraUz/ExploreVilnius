@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
@@ -12,7 +14,14 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -37,26 +46,31 @@ import java.util.List;
 import java.util.WeakHashMap;
 
 import lt.ex.karolis.explorevilnius.database.Database;
+import lt.ex.karolis.explorevilnius.database.PlacesReaderDbHelper;
 import lt.ex.karolis.explorevilnius.dataobjects.Place;
 import lt.ex.karolis.explorevilnius.utils.BitmapUtils;
 import lt.ex.karolis.explorevilnius.utils.HttpRequestUtils;
+import lt.ex.karolis.explorevilnius.utils.UrlStringBuilder.ImageHttpUrlBuilder;
 import lt.ex.karolis.explorevilnius.utils.UrlStringBuilder.PlaceHttpUrlBuilder;
 
 public class MapsActivity extends FragmentActivity implements
         OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        LocationListener {
+        LocationListener,
+        GoogleMap.OnMarkerClickListener{
 
+    private PlacesReaderDbHelper mDbHelper;
+    private Bitmap questionBitmap;
     private GoogleMap mMap;
-    private Database database;
+    //private Database database;
     private WeakHashMap<Place,Marker> placeMap;
     private WeakHashMap<Marker, Place> markerMap;
     //raw map
     private static final String TAG = MapsActivity.class.getSimpleName();
     //for location
     private Location lastUpdateLocation = null;
-    private final float MIN_DISTANCE_TO_VISIT = 50;
+    private final float MIN_DISTANCE_TO_VISIT = 100;
     private Location currentLocation;
     private LatLng currentLatLng;
     private GoogleApiClient mGoogleApiClient;
@@ -85,7 +99,10 @@ public class MapsActivity extends FragmentActivity implements
                 .setInterval(10 * 1000)        // 10 seconds, in milliseconds
                 .setFastestInterval(1 * 1000); // 1 second, in milliseconds
 
+        questionBitmap = BitmapFactory.decodeResource(getApplication().getResources(),R.mipmap.question_mark);
+        questionBitmap = Bitmap.createScaledBitmap(questionBitmap,75,75,false);
 
+        mDbHelper = new PlacesReaderDbHelper(this);
 
     }
 
@@ -120,6 +137,7 @@ public class MapsActivity extends FragmentActivity implements
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
+        mMap.setOnMarkerClickListener(this);
         mMap.setMyLocationEnabled(true);
         markerMap = new WeakHashMap<>();
         placeMap = new WeakHashMap<>();
@@ -177,7 +195,7 @@ public class MapsActivity extends FragmentActivity implements
         double currentLongitude = location.getLongitude();
         currentLatLng = new LatLng(currentLatitude, currentLongitude);
 
-        isMarkerNearby();
+        isPlaceNearby();
         mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLatLng));
 
         Log.d(TAG, "New location: " + location.toString());
@@ -238,35 +256,91 @@ public class MapsActivity extends FragmentActivity implements
         }
     }
 
-    private Marker isMarkerNearby(){
+    private Place isPlaceNearby(){
         for(Place place:markerMap.values()){
             if(currentLocation.distanceTo(place.getLocation())<MIN_DISTANCE_TO_VISIT && !place.isVisited()){
-                return VisitPlace(place);
+                if(VisitPlace(place))
+                    return place;
             }
         }
         return null;
     }
 
-    private Marker VisitPlace(Place place) {
-        if(database.insertPlace(place)) {
+    private boolean VisitPlace(Place place) {
+        //if(database.insertPlace(place)) {
+        if(mDbHelper.insertPlace(place)) {
             place.setVisited(true);
-            Marker marker = placeMap.get(place);
-            marker.setIcon(BitmapDescriptorFactory.fromBitmap(BitmapUtils.colorize(place.getBitmap(), 63290)));
+            new RetrieveIconImage().execute(place);
             Log.i(TAG, "place : "+ place.getName()+" inserted!");
-            return marker;
+            return true;
         }else{
             Log.e(TAG, "Failed to insert place!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         }
-        return null;
+        return false;
     }
 
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        Place place = markerMap.get(marker);
+        if(place!= null && place.isVisited()){
+            new DialogLoader().execute(place);
+            return true;
+        }
+        return false;
+    }
+
+    private void setupMarkerDialog(Place place, Bitmap placeImageBitmap){
+        AlertDialog.Builder mBuilder = new AlertDialog.Builder(MapsActivity.this);
+        View mView = getLayoutInflater().inflate(R.layout.details_dialog, null);
+        Button startButt = (Button) mView.findViewById(R.id.buttStart);
+        Button moreButt = (Button) mView.findViewById(R.id.buttMore);
+
+        startButt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(getApplicationContext(),"To be implemented!",Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        moreButt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(getApplicationContext(),"To be implemented!",Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        ImageView iconImage = (ImageView) mView.findViewById(R.id.imageIcon);
+        iconImage.setImageBitmap(place.getBitmap());
+
+        TextView tvName = (TextView) mView.findViewById(R.id.tvName);
+        tvName.setText(place.getName());
+
+        TextView tvType = (TextView) mView.findViewById(R.id.tvType);
+        tvType.setText(place.getType().replaceAll("_"," "));
+
+        ImageView placeImage = (ImageView) mView.findViewById(R.id.imagePlace);
+        placeImage.setImageBitmap(placeImageBitmap);
+
+        mBuilder.setView(mView);
+        AlertDialog dialog = mBuilder.create();
+        dialog.show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        mDbHelper.close();
+        super.onDestroy();
+    }
 
     private class RetrieveVisitedPlaces  extends AsyncTask<Void, Void, List<Place>> {
-
+        private Long startTime;
         @Override
         protected List<Place> doInBackground(Void... params) {
-            database = new Database(getApplication().openOrCreateDatabase("place.db", Context.MODE_PRIVATE, null));
-            List<Place> places = database.getAllPlaces();
+            startTime = System.currentTimeMillis();
+            //database = new Database(getApplication().openOrCreateDatabase("place.db", Context.MODE_PRIVATE, null));
+            //List<Place> places = database.getAllPlaces();
+            List<Place> places = mDbHelper.readAllPlaces();
+
             Log.i(TAG, "places from db:");
             for(Place place:places){
                 try {
@@ -276,6 +350,7 @@ public class MapsActivity extends FragmentActivity implements
                     e.printStackTrace();
                 }
             }
+
             return places;
         }
 
@@ -284,50 +359,106 @@ public class MapsActivity extends FragmentActivity implements
                 addVisitedPlaceMarker(place);
             }
             retrieveNearbyLocations();
+            Log.i(TAG, "RetrieveVisitedPlaces background task finished " + (System.currentTimeMillis() - startTime) + "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         }
     }
 
     private class RetrievePlaces  extends AsyncTask<URL, Void, List<Place>> {
         private Long startTime;
+
         @Override
         protected List<Place> doInBackground(URL... params) {
             startTime = System.currentTimeMillis();
             List<Place> places = new ArrayList<>();
-            for (URL param:params) {
+            for (URL param : params) {
                 try {
                     places = HttpRequestUtils.requestPlaceUrl(param);
-                    for(Place place:places){
-                        place.setBitmap(HttpRequestUtils.requestIconUrl(new URL(place.getIcon())));
+                    for (Place place : places) {
+                        place.setBitmap(questionBitmap);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
+
             return places;
         }
 
         protected void onPostExecute(List<Place> result) {
-
             boolean createMarker = true;
-            Log.i(TAG, "background task finished " + (System.currentTimeMillis() - startTime) + "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            for (Place place:result) {
-                for(Place pl: markerMap.values()) {
-                    if (pl.getId().equals(place.getId())){
+
+            for (Place place : result) {
+                for (Place pl : markerMap.values()) {
+                    if (pl.getId().equals(place.getId())) {
                         createMarker = false;
                         break;
                     }
                 }
-                if(createMarker) {
+                if (createMarker) {
                     Marker marker = mMap.addMarker(new MarkerOptions()
-                            .position(new LatLng(place.getLocation().getLatitude(),place.getLocation().getLongitude()))
-                            .icon(BitmapDescriptorFactory.fromBitmap(BitmapUtils.colorize(place.getBitmap(),0)))
+                            .position(new LatLng(place.getLocation().getLatitude(), place.getLocation().getLongitude()))
+                            .icon(BitmapDescriptorFactory.fromBitmap(questionBitmap))
                     );
                     markerMap.put(marker, place);
-                    placeMap.put(place,marker);
+                    placeMap.put(place, marker);
                 }
                 createMarker = true;
             }
-            isMarkerNearby();
+            isPlaceNearby();
+            Log.i(TAG, "RetrievePlaces background task finished " + (System.currentTimeMillis() - startTime) + "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        }
+    }
+
+    private class RetrieveIconImage  extends AsyncTask<Place, Void, Place> {
+        private Long startTime;
+
+        @Override
+        protected Place doInBackground(Place... params) {
+            startTime = System.currentTimeMillis();
+            Place place = params[0];
+            try {
+                place.setBitmap(HttpRequestUtils.requestIconUrl(new URL(place.getIcon())));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return place;
+        }
+
+        protected void onPostExecute(Place result) {
+            Marker marker = placeMap.get(result);
+            marker.setIcon(BitmapDescriptorFactory.fromBitmap(BitmapUtils.colorize(result.getBitmap(), 63290)));
+            Log.i(TAG, "RetrieveIconImage background task finished " + (System.currentTimeMillis() - startTime) + "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        }
+    }
+
+    private class DialogLoader extends AsyncTask<Place, Void, Bitmap>{
+
+        private Long startTime;
+        private Place place;
+        @Override
+        protected Bitmap doInBackground(Place... params) {
+            startTime = System.currentTimeMillis();
+            place = params[0];
+            if(place.getPhotoReference() == null || place.getPhotoReference().isEmpty())
+                return null;
+            try {
+                return HttpRequestUtils.requestPlaceImageUrl(new URL(
+                        new ImageHttpUrlBuilder("https://maps.googleapis.com/maps/api/place/photo")
+                                .addMaxWidth(540)
+                                .addMaxHeight(297)
+                                .addPhotoReference(place.getPhotoReference())
+                                .addKey("AIzaSyD0BAqS6zWQQt_M6AylhamNZ31CkbbwsTQ")
+                                .buildUrlString()
+                ));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        protected void onPostExecute(Bitmap result) {
+            setupMarkerDialog(place,result);
+            Log.i(TAG, "RetrieveIconImage background task finished " + (System.currentTimeMillis() - startTime) + "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         }
     }
 }

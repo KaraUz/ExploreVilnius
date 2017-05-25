@@ -70,13 +70,45 @@ public class PlaceJsonReader implements JsonConverter<Place> {
                 case "types": place.setType(readTypes(reader));
                     Log.i(TAG, name + ": " + place.getType());
                     break;
+                case "photos": place.setPhotoReference(readPhotos(reader));
+                    Log.i(TAG, name + ": " + place.getPhotoReference());
+                    break;
                 default: reader.skipValue();
             }
         }
         reader.endObject();
         return place;
     }
-// edit to get more types
+
+    private String readPhotos(JsonReader reader) throws IOException {
+        String photoReference = "";
+        reader.beginArray();
+        if (reader.hasNext()) photoReference = readPhoto(reader);
+        while (reader.hasNext()) {
+            reader.skipValue();
+        }
+        reader.endArray();
+        return photoReference;
+    }
+
+    private String readPhoto(JsonReader reader) throws IOException {
+        String photoReference = "";
+
+        reader.beginObject();
+        while (reader.hasNext()) {
+            String name = reader.nextName();
+            switch (name){
+                case "photo_reference": photoReference = reader.nextString();
+                    break;
+                default: reader.skipValue();
+            }
+        }
+        reader.endObject();
+
+        return photoReference;
+    }
+
+    // edit to get more types
     private String readTypes(JsonReader reader) throws IOException {
         String type = "";
         reader.beginArray();

@@ -18,17 +18,20 @@ public class Place {
     private String name;
     private String type;
     private boolean visited = false;
+    private String photoReference;
+
 
     public Place() {
     }
 
-    public Place(String id, Location location, String icon, String name, String type, boolean visited) {
+    public Place(String id, Location location, String icon, String name, String type, boolean visited, String photoReference) {
         this.id = id;
         this.location = location;
         this.icon = icon;
         this.name = name;
         this.type = type;
         this.visited = visited;
+        this.photoReference = photoReference;
     }
 
     public String getName() {
@@ -85,6 +88,14 @@ public class Place {
 
     public void setVisited(boolean visited) {
         this.visited = visited;
+    }
+
+    public String getPhotoReference() {
+        return photoReference;
+    }
+
+    public void setPhotoReference(String photoReference) {
+        this.photoReference = photoReference;
     }
 
     @Override

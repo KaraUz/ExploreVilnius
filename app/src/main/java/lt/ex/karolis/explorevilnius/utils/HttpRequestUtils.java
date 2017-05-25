@@ -31,8 +31,8 @@ public class HttpRequestUtils {
     }
 
     public static Bitmap requestIconUrl(URL url) throws IOException{
+        HttpURLConnection connection = connection = (HttpURLConnection) url.openConnection();
         try {
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setDoInput(true);
             connection.connect();
             InputStream input = connection.getInputStream();
@@ -41,6 +41,23 @@ public class HttpRequestUtils {
         } catch (IOException e) {
             // Log exception
             return null;
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    public static Bitmap requestPlaceImageUrl(URL url) throws IOException{
+        HttpURLConnection connection = connection = (HttpURLConnection) url.openConnection();
+        try {
+            connection.connect();
+            InputStream is = connection.getInputStream();
+            BufferedInputStream bis = new BufferedInputStream(is);
+            return BitmapFactory.decodeStream(bis);
+        } catch (IOException e) {
+            // Log exception
+            return null;
+        } finally {
+            connection.disconnect();
         }
     }
 }

@@ -1,6 +1,7 @@
 package lt.ex.karolis.explorevilnius.database;
 
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Location;
 
@@ -22,10 +23,11 @@ public class Database implements Serializable{
         public Database(SQLiteDatabase db){
             mydatabase = db;
             mydatabase.execSQL("CREATE TABLE IF NOT EXISTS Place(" +
-                    "id VARCHAR," +
+                    "id VARCHAR PRIMARY KEY," +
                     "name VARCHAR," +
                     "type VARCHAR," +
                     "icon VARCHAR," +
+                    "photoReference VARCHAR," +
                     "latitude REAL," +
                     "longitude REAL)");
         }
@@ -33,7 +35,7 @@ public class Database implements Serializable{
         public List<Place> getAllPlaces(){
             List<Place> places = new ArrayList<>();
 
-            Cursor resultSet = mydatabase.rawQuery("Select id, latitude, longitude, icon, name, type  from Place",null);
+            Cursor resultSet = mydatabase.rawQuery("Select id, latitude, longitude, icon, name, type, photoReference  from Place",null);
             resultSet.moveToFirst();
             if(resultSet == null || resultSet.getCount() == 0) return places;
             for (int i = 1; i<resultSet.getCount();i++) {
@@ -46,7 +48,8 @@ public class Database implements Serializable{
                         resultSet.getString(3),
                         resultSet.getString(4),
                         resultSet.getString(5),
-                        true
+                        true,
+                        resultSet.getString(6)
                 );
                 places.add(place);
                 resultSet.moveToNext();
@@ -58,11 +61,16 @@ public class Database implements Serializable{
             if(place == null) return false;
             Cursor resultSet = mydatabase.rawQuery("Select id from place where id = '"+place.getId()+"'",null);
             if(resultSet.getCount()>0) return false;
-            mydatabase.execSQL("INSERT INTO Place VALUES('"+place.getId() +
-                    "', '" + place.getName() + "','" + place.getType() +
-                    "','" + place.getIcon() + "', " + place.getLocation().getLatitude() +
-                    ", " + place.getLocation().getLongitude() + ");");
-            return true;
+            try {
+                mydatabase.execSQL("INSERT INTO Place VALUES('" + place.getId() +
+                        "', '" + place.getName() + "', '" + place.getType() +
+                        "', '" + place.getIcon() + "', '" + place.getPhotoReference() + "', " +
+                        place.getLocation().getLatitude() + ", " + place.getLocation().getLongitude() + ");");
+                return true;
+            }catch (SQLException e){
+                e.printStackTrace();
+                return false;
+            }
         }
 
         public void deletePlace(Place place){
